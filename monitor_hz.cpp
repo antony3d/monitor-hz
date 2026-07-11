@@ -6,27 +6,28 @@
 int main(int argc, char* argv[]) {
     // Установка стандартных значений (default values)
     const char* NAME =     "Monitor Refresh Change";
-    const char* VERSION =  "0.2.5";
-    int monitor_index = 1; // второй монитор по умолчанию
+    const char* VERSION =  "0.2.6";
+    int monitor_index = 0;
+    int monitor_index2 = -1;
     int freq1 = 50;
     int freq2 = 60;
     double delay_seconds = 2.0;
 
     // Флаги для отслеживания того, что именно пользователь ввел в консоли (argument tracking)
-    bool f1_specified = false;
+    bool f_specified = false;
     bool f2_specified = false;
-    
+    bool m2_specified = false;
+
     // Всегда выводим название и версию при старте
-    printf("%s v%s\n\n", NAME, VERSION);  
+    printf("%s v%s\n\n", NAME, VERSION);
 
     // ПРОВЕРКА: Если программа запущена БЕЗ ключей (argc == 1)
     if (argc == 1) {
         // 1. Выводим справку по использованию флагов
         printf("Usage: monitor_hz.exe [options]\n");
         printf("Options:\n");
-        printf("  -m <index>   Monitor index (0 for primary, 1 for secondary, etc. Default: 1)\n");
-        printf("  -f1 <hz>     First refresh rate frequency in Hz (Default: 50)\n");
-        printf("  -f2 <hz>     Second refresh rate frequency in Hz (Default: 60)\n");
+        printf("  -m <index> [index2]  Monitor index(es) (Default: 1)\n");
+        printf("  -f <hz1> [hz2]  Refresh rate(s) in Hz (Default: 50 60)\n");
         printf("  -d <seconds> Delay between switches in seconds (Default: 2.0)\n\n");
 
         // 2. Сканируем и выводим список всех мониторов в системе
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
         while (true) {
             SecureZeroMemory(&list_dd, sizeof(list_dd));
             list_dd.cb = sizeof(list_dd);
-			char monitor_friendly_name[250] = "";			
+			char monitor_friendly_name[250] = "";
 
             if (!EnumDisplayDevices(NULL, index, &list_dd, 0)) {
                 break;
@@ -53,8 +54,8 @@ int main(int argc, char* argv[]) {
 
                 if (EnumDisplaySettings(list_dd.DeviceName, ENUM_CURRENT_SETTINGS, &list_dm)) {
                     printf("Monitor Index: %d\n", index);
-                    printf("  System Name:  %s\n", list_dd.DeviceName);  
-                    printf("  GPU Model:    %s\n", list_dd.DeviceString); 
+                    printf("  System Name:  %s\n", list_dd.DeviceName);
+                    printf("  GPU Model:    %s\n", list_dd.DeviceString);
 
                     bool found_friendly_name = false;
 
@@ -89,7 +90,7 @@ int main(int argc, char* argv[]) {
                                                 if (targetName.monitorFriendlyDeviceName[0] != L'\0') {
                                                     WideCharToMultiByte(CP_ACP, 0, targetName.monitorFriendlyDeviceName, -1, monitor_friendly_name, sizeof(monitor_friendly_name), NULL, NULL);
                                                     found_friendly_name = true;
-                                                    break; 
+                                                    break;
                                                 }
                                             }
                                         }
@@ -113,14 +114,14 @@ int main(int argc, char* argv[]) {
                     }
 
                     printf("  Monitor Name: %s\n", monitor_friendly_name);
-                    printf("  Current Mode: %ldx%ld @ %ld Hz\n", 
-                           list_dm.dmPelsWidth, 
-                           list_dm.dmPelsHeight, 
+                    printf("  Current Mode: %ldx%ld @ %ld Hz\n",
+                           list_dm.dmPelsWidth,
+                           list_dm.dmPelsHeight,
                            list_dm.dmDisplayFrequency);
                     printf("--------------------------------------------------\n");
                 }
             }
-            index++; 
+            index++;
         }
 
         return 0;
@@ -131,105 +132,120 @@ int main(int argc, char* argv[]) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             printf("Usage: monitor_hz.exe [options]\n");
             printf("Options:\n");
-            printf("  -m <index>   Monitor index (Default: 1)\n");
-            printf("  -f1 <hz>     First refresh rate (Default: 50)\n");
-            printf("  -f2 <hz>     Second refresh rate (Default: 60)\n");
+            printf("  -m <index> [index2]  Monitor index(es) (Default: 1)\n");
+            printf("  -f <hz1> [hz2]  Refresh rate(s) in Hz (Default: 50 60)\n");
             printf("  -d <seconds> Delay in seconds (Default: 2.0)\n");
             return 0;
         }
         else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc) {
             monitor_index = atoi(argv[++i]);
+            // Check if the next argument is a second monitor index (no '-' prefix)
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                monitor_index2 = atoi(argv[++i]);
+                m2_specified = true;
+            }
         }
-        else if (strcmp(argv[i], "-f1") == 0 && i + 1 < argc) {
+        else if (strcmp(argv[i], "-f") == 0 && i + 1 < argc) {
             freq1 = atoi(argv[++i]);
-            f1_specified = true; // Фиксируем, что первая частота задана вручную
-        }
-        else if (strcmp(argv[i], "-f2") == 0 && i + 1 < argc) {
-            freq2 = atoi(argv[++i]);
-            f2_specified = true; // Фиксируем, что вторая частота задана вручную
+            f_specified = true;
+            // Check if the next argument is also a frequency (no '-' prefix)
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                freq2 = atoi(argv[++i]);
+                f2_specified = true;
+            }
         }
         else if (strcmp(argv[i], "-d") == 0 && i + 1 < argc) {
             delay_seconds = atof(argv[++i]);
         }
     }
 
+    // Если не заданы частоты — выходим.
+    if (!f_specified) {
+        printf("\nFrequency not set. Use -f <hz> to set it.\n");
+        return 1;
+    }
+
+    // Определяем режим работы:
+    //   - два монитора  (m2_specified)     → мульти-монитор, без задержки
+    //   - один монитор + две частоты       → последовательное переключение с задержкой
+    //   - один монитор + одна частота      → единственное переключение
+    bool multi_monitor = m2_specified;
+
     // Блок вывода текущих рабочих параметров
     printf("Running with parameters:\n");
-    printf(" -> Monitor Index: %d\n", monitor_index);
-    printf(" -> First Frequency: %d Hz\n", freq1);
-    
-    // Выводим инфу о второй частоте и задержке только если не включен однократный режим
-    if (!(f1_specified && !f2_specified)) {
-        printf(" -> Second Frequency: %d Hz\n", freq2);
-        printf(" -> Delay: %.2f seconds\n", delay_seconds);
+    if (multi_monitor) {
+        printf(" -> Monitor 1 Index: %d @ %d Hz\n", monitor_index, freq1);
+        printf(" -> Monitor 2 Index: %d @ %d Hz\n", monitor_index2, f2_specified ? freq2 : freq1);
+    } else {
+        printf(" -> Monitor Index: %d\n", monitor_index);
+        printf(" -> First Frequency: %d Hz\n", freq1);
+        if (f2_specified) {
+            printf(" -> Second Frequency: %d Hz\n", freq2);
+            printf(" -> Delay: %.2f seconds\n", delay_seconds);
+        }
     }
     printf("\n");
 
-    // Шаг 1: Инициализация структуры устройства отображения
-    DISPLAY_DEVICE dd;
-    SecureZeroMemory(&dd, sizeof(dd));
-    dd.cb = sizeof(dd);
+    // --- Вспомогательная lambda: переключить частоту на указанном мониторе ---
+    auto switch_monitor = [&](int idx, int target_hz) -> bool {
+        DISPLAY_DEVICE dd;
+        SecureZeroMemory(&dd, sizeof(dd));
+        dd.cb = sizeof(dd);
 
-    if (!EnumDisplayDevices(NULL, monitor_index, &dd, 0)) {
-        fprintf(stderr, "Error: Could not find monitor with index %d.\n", monitor_index);
-        return 1;
+        if (!EnumDisplayDevices(NULL, idx, &dd, 0)) {
+            fprintf(stderr, "Error: Could not find monitor with index %d.\n", idx);
+            return false;
+        }
+        printf("Found target monitor: %s\n", dd.DeviceName);
+
+        DEVMODE dm;
+        SecureZeroMemory(&dm, sizeof(dm));
+        dm.dmSize = sizeof(dm);
+
+        if (!EnumDisplaySettings(dd.DeviceName, ENUM_CURRENT_SETTINGS, &dm)) {
+            fprintf(stderr, "Error: Could not retrieve display settings for monitor %d.\n", idx);
+            return false;
+        }
+
+        printf("Switching refresh rate to %d Hz...\n", target_hz);
+        dm.dmDisplayFrequency = target_hz;
+        dm.dmFields = DM_DISPLAYFREQUENCY;
+
+        LONG result = ChangeDisplaySettingsEx(dd.DeviceName, &dm, NULL, 0, NULL);
+        if (result == DISP_CHANGE_SUCCESSFUL) {
+            printf("Successfully changed to %d Hz.\n", target_hz);
+            return true;
+        } else {
+            fprintf(stderr, "Failed to change to %d Hz on monitor %d. Error code: %ld\n", target_hz, idx, result);
+            return false;
+        }
+    };
+
+    // --- Режим 1: два монитора ---
+    if (multi_monitor) {
+        // Монитор 1 → freq1
+        if (!switch_monitor(monitor_index, freq1)) return 1;
+        // Монитор 2 → freq2 (или freq1, если вторая частота не задана)
+        int Hz_for_second = f2_specified ? freq2 : freq1;
+        if (!switch_monitor(monitor_index2, Hz_for_second)) return 1;
+        return 0;
     }
 
-    printf("Found target monitor: %s\n", dd.DeviceName);
-
-    // Шаг 2: Получение структуры текущих настроек экрана
-    DEVMODE dm;
-    SecureZeroMemory(&dm, sizeof(dm));
-    dm.dmSize = sizeof(dm);
-
-    if (!EnumDisplaySettings(dd.DeviceName, ENUM_CURRENT_SETTINGS, &dm)) {
-        fprintf(stderr, "Error: Could not retrieve display settings.\n");
-        return 1;
-    }
-	
-	// Если не заданы частоты пишем об этом и выходим.
-    if (!f1_specified && !f2_specified) {
-        printf("\nFrequency not set. Use -f1 <hz> to set it.\n", monitor_index); 
-        return 1;
-    }	
-
-    // Шаг 3: Переключение на первую частоту
-    printf("Switching refresh rate to %d Hz...\n", freq1);
-    dm.dmDisplayFrequency = freq1;
-    dm.dmFields = DM_DISPLAYFREQUENCY;
-
-    LONG result = ChangeDisplaySettingsEx(dd.DeviceName, &dm, NULL, 0, NULL);
-    if (result == DISP_CHANGE_SUCCESSFUL) {
-        printf("Successfully changed to %d Hz.\n", freq1);
-    } else {
-        fprintf(stderr, "Failed to change to %d Hz. Error code: %ld\n", freq1, result);
-        return 1;
-    }
-
-    // НОВАЯ ЛОГИКА: Если была задана ТОЛЬКО первая частота (без второй), 
-    // то прерываем выполнение и выходим из программы без ожидания (early exit)
-    if (f1_specified && !f2_specified) {
+    // --- Режим 2: один монитор, одна частота ---
+    if (!f2_specified) {
+        if (!switch_monitor(monitor_index, freq1)) return 1;
         printf("Single frequency mode active. Exiting successfully.\n");
         return 0;
     }
 
-    // Шаг 4: Ожидание (выполняется, только если нужны оба переключения)
+    // --- Режим 3: один монитор, две частоты (с задержкой) ---
+    if (!switch_monitor(monitor_index, freq1)) return 1;
+
     printf("Waiting for %.2f seconds...\n", delay_seconds);
     DWORD delay_ms = static_cast<DWORD>(delay_seconds * 1000.0);
-    Sleep(delay_ms); 
+    Sleep(delay_ms);
 
-    // Шаг 5: Переключение на вторую частоту
-    printf("Switching refresh rate to %d Hz...\n", freq2);
-    dm.dmDisplayFrequency = freq2;
-    dm.dmFields = DM_DISPLAYFREQUENCY;
-
-    result = ChangeDisplaySettingsEx(dd.DeviceName, &dm, NULL, 0, NULL);
-    if (result == DISP_CHANGE_SUCCESSFUL) {
-        printf("Successfully changed to %d Hz.\n", freq2);
-    } else {
-        fprintf(stderr, "Failed to change to %d Hz. Error code: %ld\n", freq2, result);
-        return 1;
-    }
+    if (!switch_monitor(monitor_index, freq2)) return 1;
 
     return 0;
 }

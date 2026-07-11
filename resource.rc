@@ -3,8 +3,8 @@
 
 // Определение информации о версии (Version Information)
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     0,2,5,0
-PRODUCTVERSION  0,2,5,0
+FILEVERSION     0,2,6,0
+PRODUCTVERSION  0,2,6,0
 FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
 FILEFLAGS       0x0L // 0x0L означает финальный релиз (Final Release)
 FILEOS          VOS__WINDOWS32
@@ -17,12 +17,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName",      "Open Source Community\0"
             VALUE "FileDescription",  "Monitor Refresh Rate Changer Utility\0"
-            VALUE "FileVersion",      "0.2.5\0"
+            VALUE "FileVersion",      "0.2.6\0"
             VALUE "InternalName",     "monitor_refresh\0"
             VALUE "LegalCopyright",   "Copyright (C) 2026\0"
             VALUE "OriginalFilename", "monitor_hz.exe\0"
             VALUE "ProductName",      "Monitor Hz Change\0"
-            VALUE "ProductVersion",   "0.2.5\0"
+            VALUE "ProductVersion",   "0.2.6\0"
         END
     END
     BLOCK "VarFileInfo"

@@ -35,12 +35,12 @@ Monitor Index: 1
 
 ##Examples
 
-Change monitor at index 1 to 50 Hz permanently:
+Change monitor at index 0 to 50 Hz permanently:
 
 ```
-monitor_hz.exe -m 1 -f1 50
+monitor_hz.exe -m 0 -f1 50
 ```
-Switch to 50 Hz, wait 3 seconds, and revert to 60 Hz:
+Switch monitor 1 (number two) to 50 Hz, wait 3 seconds, and revert to 60 Hz:
 ```
 monitor_hz.exe -m 1 -f1 50 -f2 60 -d 3
 ```
