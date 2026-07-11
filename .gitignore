@@ -2,4 +2,4 @@
 backup
 *.res
 compile.cmd
-.qwen
+.qwen\*.*
