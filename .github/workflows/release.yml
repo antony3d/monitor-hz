@@ -5,27 +5,36 @@ on:
     tags:
       - 'v*'
 
+# Права на запись для создания релизов (Write permissions)
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
+    # 1. Скачиваем код (Checkout)
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 2. Ставим компилятор (Compiler setup)
     - name: Setup MinGW
       uses: egor-tensin/setup-mingw@v2
       with:
         platform: x64
 
+    # 3. Собираем ресурсы (Resource compilation)
     - name: Compile Resource File
       run: |
         windres resource.rc -O coff -o resource.res
 
+    # 4. Компилируем ПРАВИЛЬНЫЙ файл monitor_hz.cpp (C++ compilation)
     - name: Compile Executable
       run: |
         g++ -Os -s -static monitor_hz.cpp resource.res -o monitor_hz.exe -luser32
 
+    # 5. Публикуем готовый exe (Publish release)
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v2
       with:
