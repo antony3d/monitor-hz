@@ -1,0 +1,4 @@
+*.exe
+backup
+*.res
+compile.cmd
