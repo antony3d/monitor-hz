@@ -5,7 +5,7 @@ on:
     tags:
       - 'v*'
 
-# Права на запись для создания релизов (Write permissions)
+# Явно выдаем права на запись для создания релизов (Write permissions)
 permissions:
   contents: write
 
@@ -14,27 +14,30 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    # 1. Скачиваем код (Checkout)
+    # 1. Скачиваем исходный код репозитория из ветки
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 2. Ставим компилятор (Compiler setup)
-    - name: Setup MinGW
-      uses: egor-tensin/setup-mingw@v2
+    # 2. Поднимаем официальное окружение MSYS2 и ставим чистый компилятор GCC
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
       with:
-        platform: x64
+        msystem: MINGW64
+        install: mingw-w64-x86_64-gcc
 
-    # 3. Собираем ресурсы (Resource compilation)
+    # 3. Собираем файл ресурсов (.rc) внутри оболочки MSYS2
     - name: Compile Resource File
+      shell: msys2 {0}
       run: |
         windres resource.rc -O coff -o resource.res
 
-    # 4. Компилируем ПРАВИЛЬНЫЙ файл monitor_hz.cpp (C++ compilation)
+    # 4. Компилируем monitor_hz.cpp в готовый статичный экзешник
     - name: Compile Executable
+      shell: msys2 {0}
       run: |
         g++ -Os -s -static monitor_hz.cpp resource.res -o monitor_hz.exe -luser32
 
-    # 5. Публикуем готовый exe (Publish release)
+    # 5. Создаем релиз на GitHub и прикрепляем собранный файл
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v2
       with:
