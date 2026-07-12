@@ -3,8 +3,8 @@
 
 // Определение информации о версии (Version Information)
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     0,2,6,0
-PRODUCTVERSION  0,2,6,0
+FILEVERSION     0,2,7,0
+PRODUCTVERSION  0,2,7,0
 FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
 FILEFLAGS       0x0L // 0x0L означает финальный релиз (Final Release)
 FILEOS          VOS__WINDOWS32
@@ -15,14 +15,14 @@ BEGIN
     BEGIN
         BLOCK "040904b0" // Язык: English (U.S.), Кодировка: Unicode
         BEGIN
-            VALUE "CompanyName",      "Open Source Community\0"
-            VALUE "FileDescription",  "Monitor Refresh Rate Changer Utility\0"
-            VALUE "FileVersion",      "0.2.6\0"
+			VALUE "CompanyName",      "antony3d"
+            VALUE "FileDescription",  "Monitor Refresh Rate Utility https://github.com/antony3d/monitor-hz\0"
+            VALUE "FileVersion",      "0.2.7\0"
             VALUE "InternalName",     "monitor_refresh\0"
-            VALUE "LegalCopyright",   "Copyright (C) 2026\0"
+			VALUE "LegalCopyright",   "(C) 2026 antony3d. Licensed under the MIT License."
             VALUE "OriginalFilename", "monitor_hz.exe\0"
-            VALUE "ProductName",      "Monitor Hz Change\0"
-            VALUE "ProductVersion",   "0.2.6\0"
+            VALUE "ProductName",      "Monitor Hz\0"
+            VALUE "ProductVersion",   "0.2.7\0"
         END
     END
     BLOCK "VarFileInfo"

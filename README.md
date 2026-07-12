@@ -1,4 +1,4 @@
-# Monitor Hz Change v0.2.6
+# Monitor Hz Change v0.2.7
 
 A lightweight Windows command-line utility to programmatically change monitor refresh rates using modern Windows Display Config API.
 

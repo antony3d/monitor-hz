@@ -1,6 +1,7 @@
 *.exe
 backup
 *.res
+*.o
 compile.cmd
 .qwen
 .qwen\*.*
